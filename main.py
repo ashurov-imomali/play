@@ -18,21 +18,28 @@ go = False
 wn = None
 run = True
 
+bg = cv.resize(cv.imread("background.jpg"), (w, h))
+x_img = cv.resize(cv.imread("x_img.png", cv.IMREAD_UNCHANGED), (100, 100))
+o_img = cv.resize(cv.imread("o_img.png", cv.IMREAD_UNCHANGED), (100, 100))
+
+def overlay_img(bg, fg, x, y):
+    h_fg, w_fg = fg.shape[:2]
+    for c in range(3):
+        bg[y:y+h_fg, x:x+w_fg, c] = fg[:,:,c] * (fg[:,:,3]/255.0) + bg[y:y+h_fg, x:x+w_fg, c] * (1.0 - fg[:,:,3]/255.0)
+
 def dr(img):
-    img[:] = 255
+    img[:] = bg.copy()
     for i in range(1,3):
         cv.line(img,(0,cs*i),(w,cs*i),(0,0,0),3)
         cv.line(img,(cs*i,0),(cs*i,h),(0,0,0),3)
     for r in range(3):
         for c in range(3):
-            cx = c*cs+cs//2
-            cy = r*cs+cs//2
+            x = c * cs + cs//2 - 50
+            y = r * cs + cs//2 - 50
             if bd[r][c]==px:
-                of = 50
-                cv.line(img,(cx-of,cy-of),(cx+of,cy+of),(255,0,0),5)
-                cv.line(img,(cx+of,cy-of),(cx-of,cy+of),(255,0,0),5)
+                overlay_img(img, x_img, x, y)
             elif bd[r][c]==po:
-                cv.circle(img,(cx,cy),60,(0,0,255),5)
+                overlay_img(img, o_img, x, y)
     cv.rectangle(img,(rbx,rby),(rbx+bw,rby+bh),(200,200,200),-1)
     cv.rectangle(img,(ebx,eby),(ebx+bw,eby+bh),(200,200,200),-1)
     cv.putText(img,"Restart",(rbx+5,rby+30),cv.FONT_HERSHEY_SIMPLEX,0.7,(0,0,0),2)
@@ -97,7 +104,7 @@ def main():
     while True:
         dr(img)
         cv.imshow("XO",img)
-        if cv.waitKey(10)==27 or not run: # Esc или кнопка Exit
+        if cv.waitKey(10)==27 or not run:
             break
     cv.destroyAllWindows()
 
